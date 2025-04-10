@@ -70,6 +70,7 @@ io.on("connection", (socket) => {
     const player = room.players.find((p) => p.id === socket.id);
     const currentSymbol = room.turn % 2 === 0 ? "X" : "O";
 
+    
     if (player.symbol !== currentSymbol || room.board[index]) return;
 
     room.board[index] = player.symbol;
@@ -96,12 +97,9 @@ io.on("connection", (socket) => {
 
       setTimeout(() => {
         room.board = Array(9).fill(null);
-        room.turn = 0;
+        room.turn = room.starterIndex;
 
         room.starterIndex = 1 - room.starterIndex;
-
-        const startingPlayer = room.players[room.starterIndex];
-        room.turn = startingPlayer.symbol === "X" ? 0 : 1;
 
         io.to(roomCode).emit("gameState", room.board);
         io.to(roomCode).emit("notification", {
@@ -112,12 +110,9 @@ io.on("connection", (socket) => {
       io.to(roomCode).emit("gameOver", "Draw");
       setTimeout(() => {
         room.board = Array(9).fill(null);
-        room.turn = 0;
+        room.turn = room.starterIndex;
 
         room.starterIndex = 1 - room.starterIndex;
-
-        const startingPlayer = room.players[room.starterIndex];
-        room.turn = startingPlayer.symbol === "X" ? 0 : 1;
 
         io.to(roomCode).emit("gameState", room.board);
         io.to(roomCode).emit("notification", {
