@@ -9,12 +9,12 @@ app.use(cors());
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", // Allow all origins for dev
+    origin: "*",
     methods: ["GET", "POST"],
   },
 });
 
-const rooms = {}; // roomCode -> { players, board, turn, score, starterIndex }
+const rooms = {};
 
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
@@ -70,7 +70,6 @@ io.on("connection", (socket) => {
     const player = room.players.find((p) => p.id === socket.id);
     const currentSymbol = room.turn % 2 === 0 ? "X" : "O";
 
-    // Ensure only the current player can make a move
     if (player.symbol !== currentSymbol || room.board[index]) return;
 
     room.board[index] = player.symbol;
@@ -84,19 +83,23 @@ io.on("connection", (socket) => {
       io.to(roomCode).emit("gameOver", player.name);
       io.to(roomCode).emit("updateScore", room.score);
 
-      // Emit congratulatory notification
-      io.to(roomCode).emit("notification", {
+      socket.emit("notification", {
         message: `Congratulations ${player.name}! You are the winner!`,
       });
+
+      const loser = room.players.find((p) => p.id !== socket.id);
+      if (loser) {
+        io.to(loser.id).emit("notification", {
+          message: `Sorry ${loser.name}, you lost this round.`,
+        });
+      }
 
       setTimeout(() => {
         room.board = Array(9).fill(null);
         room.turn = 0;
 
-        // Alternate the starting player
         room.starterIndex = 1 - room.starterIndex;
 
-        // Notify players of the updated turn and board
         io.to(roomCode).emit("gameState", room.board);
         io.to(roomCode).emit("notification", {
           message: `${winner} wins! Next round starting...`,
@@ -109,7 +112,6 @@ io.on("connection", (socket) => {
         room.turn = 0;
         room.starterIndex = 1 - room.starterIndex;
 
-        // Notify players of the updated turn and board
         io.to(roomCode).emit("gameState", room.board);
         io.to(roomCode).emit("notification", {
           message: "It's a draw! Next round starting...",
@@ -135,7 +137,6 @@ io.on("connection", (socket) => {
         });
         io.to(code).emit("playerJoined", room.players);
 
-        // Optional: destroy room if empty
         if (room.players.length === 0) {
           delete rooms[code];
         } else {
@@ -152,16 +153,16 @@ function checkWinner(board) {
   const lines = [
     [0, 1, 2],
     [3, 4, 5],
-    [6, 7, 8], // rows
+    [6, 7, 8],
     [0, 3, 6],
     [1, 4, 7],
-    [2, 5, 8], // columns
+    [2, 5, 8],
     [0, 4, 8],
-    [2, 4, 6], // diagonals
+    [2, 4, 6],
   ];
   for (let [a, b, c] of lines) {
     if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-      return board[a]; // 'X' or 'O'
+      return board[a];
     }
   }
   return null;
