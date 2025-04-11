@@ -48,8 +48,9 @@ io.on("connection", (socket) => {
     io.to(roomCode).emit("gameState", room.board);
 
     if (room.players.length === 2) {
+      const starter = room.players[room.starterIndex];
       io.to(roomCode).emit("notification", {
-        message: "Game started!",
+        message: `Game started! ${starter.name} goes first.`,
       });
     }
   });
@@ -96,25 +97,27 @@ io.on("connection", (socket) => {
 
       setTimeout(() => {
         room.board = Array(9).fill(null);
-        room.turn = 0;
-
         room.starterIndex = 1 - room.starterIndex;
+        room.turn = room.starterIndex;
 
         io.to(roomCode).emit("gameState", room.board);
+        const newStarter = room.players[room.starterIndex];
         io.to(roomCode).emit("notification", {
-          message: `${winner} wins! Next round starting...`,
+          message: `${winner} wins! Next round starting... ${newStarter.name} goes first.`,
         });
       }, 2500);
     } else if (!room.board.includes(null)) {
       io.to(roomCode).emit("gameOver", "Draw");
+
       setTimeout(() => {
         room.board = Array(9).fill(null);
-        room.turn = 0;
         room.starterIndex = 1 - room.starterIndex;
+        room.turn = room.starterIndex;
 
         io.to(roomCode).emit("gameState", room.board);
+        const newStarter = room.players[room.starterIndex];
         io.to(roomCode).emit("notification", {
-          message: "It's a draw! Next round starting...",
+          message: "It's a draw! Next round starting... " + newStarter.name + " goes first.",
         });
       }, 2500);
     }
