@@ -96,12 +96,10 @@ io.on("connection", (socket) => {
 
       setTimeout(() => {
         room.board = Array(9).fill(null);
+        room.turn = 0;
 
-    
-        room.starterIndex = 1; 
-        room.turn = room.starterIndex;
+        room.starterIndex = 1 - room.starterIndex;
 
-       
         io.to(roomCode).emit("gameState", room.board);
         io.to(roomCode).emit("notification", {
           message: `${winner} wins! Next round starting...`,
@@ -111,12 +109,9 @@ io.on("connection", (socket) => {
       io.to(roomCode).emit("gameOver", "Draw");
       setTimeout(() => {
         room.board = Array(9).fill(null);
+        room.turn = 0;
+        room.starterIndex = 1 - room.starterIndex;
 
-        
-        room.starterIndex = 1;
-        room.turn = room.starterIndex;
-
-       
         io.to(roomCode).emit("gameState", room.board);
         io.to(roomCode).emit("notification", {
           message: "It's a draw! Next round starting...",
